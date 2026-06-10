@@ -10,6 +10,20 @@ public abstract class AbstractArquivo<T extends Serializable> {
 
     public AbstractArquivo(String caminhoArquivo) {
         this.caminhoArquivo = caminhoArquivo;
+        garantirDiretorioExiste();
+    }
+
+    private void garantirDiretorioExiste() {
+        File arquivo = new File(caminhoArquivo);
+        File diretorio = arquivo.getParentFile();
+
+
+        if (diretorio != null && !diretorio.exists()) {
+            boolean criado = diretorio.mkdirs();
+            if (criado) {
+                System.out.println("Diretório criado com sucesso: " + diretorio.getAbsolutePath());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -27,6 +41,7 @@ public abstract class AbstractArquivo<T extends Serializable> {
     }
 
     protected void salvarTodosArquivo(List<T> registros) {
+        garantirDiretorioExiste();
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(caminhoArquivo))) {
             oos.writeObject(registros);
         } catch (IOException e) {
