@@ -1,20 +1,21 @@
 package com.pucpr.projeto.application;
 
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
+import com.pucpr.projeto.repositories.UsuarioRepository;
+import com.pucpr.projeto.services.UsuarioService;
+import com.pucpr.projeto.views.LoginView;
 import javafx.stage.Stage;
 
 public class Application extends javafx.application.Application {
 
     @Override
     public void start(Stage primaryStage) {
-        Label label = new Label("Ambiente JavaFX Pronto!");
-        StackPane root = new StackPane(label);
-        Scene scene = new Scene(root, 400, 300);
+        UsuarioRepository repo = new UsuarioRepository();
+        UsuarioService usuarioService = new UsuarioService(repo);
 
-        primaryStage.setTitle("Projeto RA3 - PUCPR");
-        primaryStage.setScene(scene);
+        LoginView loginView = new LoginView(primaryStage, usuarioService);
+
+        primaryStage.setTitle("Sistema Coopafi");
+        primaryStage.setScene(loginView.getScene());
         primaryStage.show();
     }
 
