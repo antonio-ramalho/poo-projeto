@@ -44,9 +44,7 @@ public class LoginView {
 
         btnCadastrarDoador.setOnAction(e -> irParaCadastroDoador());
 
-        btnCadastrarOsc.setOnAction(e -> {
-            new Alert(Alert.AlertType.INFORMATION, "Tela de OSC em construção pelo outro desenvolvedor.").showAndWait();
-        });
+        btnCadastrarOsc.setOnAction(e -> irParaCadastroOsc());
 
         layout.getChildren().addAll(
                 new Label("Login:"), txtLogin,
@@ -71,5 +69,14 @@ public class LoginView {
     private void irParaHome(Usuario usuarioLogado) {
         HomeView homeView = new HomeView(stage, usuarioLogado);
         stage.setScene(homeView.getScene());
+    }
+
+    private void irParaCadastroOsc() {
+        com.pucpr.projeto.repositories.UsuarioRepository uRepo = new com.pucpr.projeto.repositories.UsuarioRepository();
+        com.pucpr.projeto.repositories.OscRepository oRepo = new com.pucpr.projeto.repositories.OscRepository();
+        com.pucpr.projeto.services.PessoaJuridicaService cadastroService = new com.pucpr.projeto.services.PessoaJuridicaService(uRepo, oRepo);
+
+        CadastroOscView cadastroView = new CadastroOscView(stage, cadastroService);
+        stage.setScene(cadastroView.getScene());
     }
 }

@@ -4,6 +4,7 @@ import com.pucpr.projeto.domain.entities.Usuario;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -29,7 +30,16 @@ public class HomeView {
 
         Label lblUsuario = new Label("Usuário logado: " + usuarioLogado.getLogin());
 
-        layout.getChildren().addAll(lblBoasVindas, lblUsuario);
+        Button btnConsultarOscs = new Button("Consultar e Gerenciar OSCs");
+        btnConsultarOscs.setOnAction(e -> {
+            com.pucpr.projeto.repositories.UsuarioRepository uRepo = new com.pucpr.projeto.repositories.UsuarioRepository();
+            com.pucpr.projeto.repositories.OscRepository oRepo = new com.pucpr.projeto.repositories.OscRepository();
+            com.pucpr.projeto.services.PessoaJuridicaService service = new com.pucpr.projeto.services.PessoaJuridicaService(uRepo, oRepo);
+
+            ConsultaOscView consultaView = new ConsultaOscView(stage, service);
+            stage.setScene(consultaView.getScene());
+        });
+        layout.getChildren().addAll(lblBoasVindas, lblUsuario, btnConsultarOscs);
 
         this.scene = new Scene(layout, 400, 300);
     }
