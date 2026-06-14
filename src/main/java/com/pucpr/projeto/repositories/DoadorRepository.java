@@ -1,29 +1,29 @@
 package com.pucpr.projeto.repositories;
 
-import com.pucpr.projeto.domain.entities.PessoaFisica;
+import com.pucpr.projeto.domain.entities.Doador;
 import com.pucpr.projeto.exceptions.DomainException;
 import com.pucpr.projeto.infrastructure.AbstractArquivo;
 import com.pucpr.projeto.interfaces.ICrud;
 import java.util.List;
 
-public class PessoaFisicaRepository extends AbstractArquivo<PessoaFisica> implements ICrud<PessoaFisica, String> {
+public class DoadorRepository extends AbstractArquivo<Doador> implements ICrud<Doador, String> {
 
-    public PessoaFisicaRepository() {
-        super("data/pessoaFisica.dat");
+    public DoadorRepository() {
+        super("data/doador.dat");
     }
 
     @Override
-    public void salvar(PessoaFisica entidade) {
-        List<PessoaFisica> pessoasFisica = buscarTodosArquivo();
+    public void salvar(Doador entidade) {
+        List<Doador> pessoasFisica = buscarTodosArquivo();
         pessoasFisica.add(entidade);
         salvarTodosArquivo(pessoasFisica);
     }
 
     @Override
-    public PessoaFisica buscarPorId(String id) {
-        List<PessoaFisica> pessoas = buscarTodosArquivo();
+    public Doador buscarPorId(String id) {
+        List<Doador> pessoas = buscarTodosArquivo();
 
-        PessoaFisica pessoa = pessoas.stream().filter(u -> u.getId().equals(id)).findFirst().orElse(null);
+        Doador pessoa = pessoas.stream().filter(u -> u.getId().equals(id)).findFirst().orElse(null);
 
         if (pessoa == null) {
             throw new DomainException("Usuário não encontrado");
@@ -32,13 +32,13 @@ public class PessoaFisicaRepository extends AbstractArquivo<PessoaFisica> implem
     }
 
     @Override
-    public List<PessoaFisica> buscarTodos() {
+    public List<Doador> buscarTodos() {
         return buscarTodosArquivo();
     }
 
     @Override
-    public void atualizar(PessoaFisica entidade) {
-        List<PessoaFisica> pessoas = buscarTodosArquivo();
+    public void atualizar(Doador entidade) {
+        List<Doador> pessoas = buscarTodosArquivo();
 
         for (int i = 0; i < pessoas.size(); i++) {
 
@@ -54,7 +54,7 @@ public class PessoaFisicaRepository extends AbstractArquivo<PessoaFisica> implem
 
     @Override
     public void excluir(String id) {
-        List<PessoaFisica> pessoasFisicas = buscarTodosArquivo();
+        List<Doador> pessoasFisicas = buscarTodosArquivo();
 
         boolean excluir = pessoasFisicas.removeIf(u -> u.getId().equals(id));
 

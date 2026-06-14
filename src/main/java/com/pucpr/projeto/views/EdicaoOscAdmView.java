@@ -2,6 +2,11 @@ package com.pucpr.projeto.views;
 
 import com.pucpr.projeto.domain.entities.Osc;
 import com.pucpr.projeto.domain.entities.Usuario;
+import com.pucpr.projeto.domain.valueObjects.Cep;
+import com.pucpr.projeto.domain.valueObjects.Email;
+import com.pucpr.projeto.domain.valueObjects.Endereco;
+import com.pucpr.projeto.domain.valueObjects.Telefone;
+import com.pucpr.projeto.enums.Categoria;
 import com.pucpr.projeto.exceptions.DomainException;
 import com.pucpr.projeto.services.PessoaJuridicaService;
 import javafx.geometry.Insets;
@@ -11,6 +16,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import java.util.Arrays;
 
 public class EdicaoOscAdmView {
     private final Stage stage;
@@ -19,7 +25,9 @@ public class EdicaoOscAdmView {
     private final Usuario adminLogado;
     private Scene scene;
 
-    private TextField txtNomeLegal, txtNomeComercial;
+    private TextField txtNomeLegal, txtNomeComercial, txtEmail, txtTelefone, txtChavePix;
+    private TextField txtCep, txtRua, txtBairro, txtCidade, txtNumero;
+    private ComboBox<String> comboAtuacao;
 
     public EdicaoOscAdmView(Stage stage, Osc osc, PessoaJuridicaService service, Usuario adminLogado) {
         this.stage = stage;
@@ -38,13 +46,36 @@ public class EdicaoOscAdmView {
 
         GridPane grid = new GridPane();
         grid.setVgap(10);
-        grid.setHgap(10);
+        grid.setHgap(15);
 
         txtNomeLegal = new TextField(osc.getNomeLegal());
         txtNomeComercial = new TextField(osc.getNomeComercial());
+        txtEmail = new TextField(osc.getEmail().getEnderecoEmail());
+        txtTelefone = new TextField(osc.getTelefone().getNumeroTelefone());
+        txtChavePix = new TextField(osc.getChavePix());
 
-        grid.add(new Label("Nome Legal:"), 0, 0); grid.add(txtNomeLegal, 1, 0);
-        grid.add(new Label("Nome Comercial:"), 0, 1); grid.add(txtNomeComercial, 1, 1);
+        comboAtuacao = new ComboBox<>();
+        Arrays.stream(Categoria.values()).forEach(c -> comboAtuacao.getItems().add(c.name()));
+        comboAtuacao.setValue(osc.getAtuacao() != null ? osc.getAtuacao().name() : null);
+
+        txtCep = new TextField(osc.getEndereco().getNumeroCep().getNumeroCep());
+        txtRua = new TextField(osc.getEndereco().getRua());
+        txtBairro = new TextField(osc.getEndereco().getBairro());
+        txtCidade = new TextField(osc.getEndereco().getCidade());
+        txtNumero = new TextField(osc.getEndereco().getNumeroEndereco());
+
+        grid.add(new Label("Nome Legal:"), 0, 0);       grid.add(txtNomeLegal, 1, 0);
+        grid.add(new Label("Nome Comercial:"), 0, 1);   grid.add(txtNomeComercial, 1, 1);
+        grid.add(new Label("E-mail:"), 0, 2);           grid.add(txtEmail, 1, 2);
+        grid.add(new Label("Telefone:"), 0, 3);         grid.add(txtTelefone, 1, 3);
+        grid.add(new Label("Área de Atuação:"), 0, 4);  grid.add(comboAtuacao, 1, 4);
+        grid.add(new Label("Chave PIX:"), 0, 5);        grid.add(txtChavePix, 1, 5);
+
+        grid.add(new Label("CEP:"), 2, 0);              grid.add(txtCep, 3, 0);
+        grid.add(new Label("Cidade:"), 2, 1);           grid.add(txtCidade, 3, 1);
+        grid.add(new Label("Rua/Av:"), 2, 2);           grid.add(txtRua, 3, 2);
+        grid.add(new Label("Bairro:"), 2, 3);           grid.add(txtBairro, 3, 3);
+        grid.add(new Label("Número:"), 2, 4);           grid.add(txtNumero, 3, 4);
 
         Button btnSalvar = new Button("Salvar Alterações");
         btnSalvar.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -55,14 +86,25 @@ public class EdicaoOscAdmView {
 
         HBox botoes = new HBox(15, btnSalvar, btnCancelar);
 
-        layout.getChildren().addAll(titulo, new Separator(), grid, botoes);
-        this.scene = new Scene(layout, 400, 250);
+        layout.getChildren().addAll(titulo, new Separator(), grid, new Separator(), botoes);
+        this.scene = new Scene(layout, 700, 450);
     }
 
     private void salvarEdicao() {
         try {
             osc.alterarNomeLegal(txtNomeLegal.getText());
             osc.alterarNomeMarca(txtNomeComercial.getText());
+
+            if(!txtEmail.getText().isEmpty()) osc.atualizarEmail(new Email(txtEmail.getText()));
+            if(!txtTelefone.getText().isEmpty()) osc.atualizarTelefone(new Telefone(txtTelefone.getText()));
+
+            osc.alterarCategoria(Categoria.valueOf(comboAtuacao.getValue()));
+            osc.alterarChavePix(txtChavePix.getText());
+
+            if (!txtCep.getText().isEmpty()) {
+                Cep cep = new Cep(txtCep.getText());
+                osc.atualizarEndereco(new Endereco(cep, txtRua.getText(), txtBairro.getText(), txtCidade.getText(), txtNumero.getText()));
+            }
 
             service.atualizarOsc(osc);
 
@@ -71,6 +113,8 @@ public class EdicaoOscAdmView {
 
         } catch (DomainException ex) {
             new Alert(Alert.AlertType.WARNING, ex.getMessage()).showAndWait();
+        } catch (Exception ex) {
+            new Alert(Alert.AlertType.ERROR, "Verifique os dados informados: " + ex.getMessage()).showAndWait();
         }
     }
 

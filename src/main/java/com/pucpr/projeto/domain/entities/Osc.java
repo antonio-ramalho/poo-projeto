@@ -38,6 +38,14 @@ public class Osc extends PessoaJuridica {
         this.documentos = new ArrayList<>();
     }
 
+    public void alterarChavePix(String chavePix) {
+        this.chavePix = chavePix;
+    }
+
+    public void alterarCategoria(Categoria categoria) {
+        this.atuacao = categoria;
+    }
+
     public void addDocumento(DocOsc doc) {
         if (doc != null) {
             this.documentos.add(doc);

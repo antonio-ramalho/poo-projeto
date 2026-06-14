@@ -50,4 +50,12 @@ public class Doador extends PessoaFisica {
     public StatusUsuario getStatus() {
         return status;
     }
+
+    public void alterarAnonimato(boolean anonimato) {
+        this.anonimato = anonimato;
+    }
+
+    public void alterarCategoria(Categoria categoria) {
+        this.categoria = categoria;
+    }
 }
