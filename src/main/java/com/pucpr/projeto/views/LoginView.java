@@ -1,10 +1,15 @@
 package com.pucpr.projeto.views;
 
+import com.pucpr.projeto.domain.entities.PessoaFisica;
+import com.pucpr.projeto.domain.entities.Osc;
 import com.pucpr.projeto.domain.entities.Usuario;
+import com.pucpr.projeto.enums.PerfilUsuario;
 import com.pucpr.projeto.exceptions.DomainException;
+import com.pucpr.projeto.repositories.OscRepository;
 import com.pucpr.projeto.repositories.PessoaFisicaRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
 import com.pucpr.projeto.services.PessoaFisicaService;
+import com.pucpr.projeto.services.PessoaJuridicaService;
 import com.pucpr.projeto.services.UsuarioService;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -30,20 +35,19 @@ public class LoginView {
         TextField txtLogin = new TextField();
         PasswordField txtSenha = new PasswordField();
         Button btnEntrar = new Button("Entrar");
-        Button btnCadastrarDoador = new Button("Cadastrar como Doador (Pessoa Física)");
-        Button btnCadastrarOsc = new Button("Cadastrar OSC (Pessoa Jurídica)");
+        Button btnCadastrarDoador = new Button("Cadastrar como Doador");
+        Button btnCadastrarOsc = new Button("Cadastrar OSC");
 
         btnEntrar.setOnAction(e -> {
             try {
                 Usuario usuarioLogado = usuarioService.autenticar(txtLogin.getText(), txtSenha.getText());
-                irParaHome(usuarioLogado);
+                rotearParaHomeCorreta(usuarioLogado);
             } catch (DomainException ex) {
                 new Alert(Alert.AlertType.WARNING, ex.getMessage()).showAndWait();
             }
         });
 
         btnCadastrarDoador.setOnAction(e -> irParaCadastroDoador());
-
         btnCadastrarOsc.setOnAction(e -> irParaCadastroOsc());
 
         layout.getChildren().addAll(
@@ -57,26 +61,47 @@ public class LoginView {
 
     public Scene getScene() { return this.scene; }
 
-    private void irParaCadastroDoador() {
-        UsuarioRepository uRepo = new UsuarioRepository();
-        PessoaFisicaRepository pRepo = new PessoaFisicaRepository();
-        PessoaFisicaService cadastroService = new PessoaFisicaService(uRepo, pRepo);
+    private void rotearParaHomeCorreta(Usuario usuarioLogado) {
+        PerfilUsuario perfil = usuarioLogado.getPerfil();
 
+        if (perfil == PerfilUsuario.ADMINISTRADOR) {
+            irParaHomeAdm(usuarioLogado);
+            return;
+        }
+
+        if (perfil == PerfilUsuario.DOADOR) {
+            HomeDoadorView home = new HomeDoadorView(stage, usuarioLogado);
+            stage.setScene(home.getScene());
+            return;
+        }
+
+        if (perfil == PerfilUsuario.OSC) {
+            PessoaJuridicaService pjService = new PessoaJuridicaService(new UsuarioRepository(), new OscRepository());
+
+            Osc osc = pjService.buscarPorId(usuarioLogado.getId());
+
+            HomeOscView home = new HomeOscView(stage, usuarioLogado, osc);
+            stage.setScene(home.getScene());
+            return;
+        }
+
+        new Alert(Alert.AlertType.ERROR, "Perfil de usuário não reconhecido.").showAndWait();
+    }
+
+    private void irParaCadastroDoador() {
+        PessoaFisicaService cadastroService = new PessoaFisicaService(new UsuarioRepository(), new PessoaFisicaRepository());
         CadastroDoadorView cadastroView = new CadastroDoadorView(stage, cadastroService);
         stage.setScene(cadastroView.getScene());
     }
 
-    private void irParaHome(Usuario usuarioLogado) {
-        HomeView homeView = new HomeView(stage, usuarioLogado);
-        stage.setScene(homeView.getScene());
-    }
-
     private void irParaCadastroOsc() {
-        com.pucpr.projeto.repositories.UsuarioRepository uRepo = new com.pucpr.projeto.repositories.UsuarioRepository();
-        com.pucpr.projeto.repositories.OscRepository oRepo = new com.pucpr.projeto.repositories.OscRepository();
-        com.pucpr.projeto.services.PessoaJuridicaService cadastroService = new com.pucpr.projeto.services.PessoaJuridicaService(uRepo, oRepo);
-
+        PessoaJuridicaService cadastroService = new PessoaJuridicaService(new UsuarioRepository(), new OscRepository());
         CadastroOscView cadastroView = new CadastroOscView(stage, cadastroService);
         stage.setScene(cadastroView.getScene());
+    }
+
+    private void irParaHomeAdm(Usuario admin) {
+        HomeAdmView admView = new HomeAdmView(stage, admin);
+        stage.setScene(admView.getScene());
     }
 }

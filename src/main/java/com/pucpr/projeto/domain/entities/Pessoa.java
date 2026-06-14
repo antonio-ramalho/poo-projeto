@@ -34,12 +34,12 @@ public abstract class Pessoa implements Serializable {
         this.endereco =  endereco;
     }
 
-    public void atualizarTelefone(Telefone telefone) {
-        this.telefone = telefone;
+    public void atualizarEmail(Email email) {
+        this.email = email;
     }
 
-    public void atualizarTelefone(String telefone) {
-        this.telefone = new Telefone(telefone);
+    public void atualizarTelefone(Telefone telefone) {
+        this.telefone = telefone;
     }
 
     public Email getEmail() {

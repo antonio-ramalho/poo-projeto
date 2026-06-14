@@ -5,8 +5,12 @@ import com.pucpr.projeto.enums.Categoria;
 import com.pucpr.projeto.enums.Genero;
 import com.pucpr.projeto.enums.StatusUsuario;
 
-public class Doador extends PessoaFisica{
+import java.io.Serial;
 
+public class Doador extends PessoaFisica {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
     private Categoria categoria;
     private boolean anonimato;
     private StatusUsuario status;

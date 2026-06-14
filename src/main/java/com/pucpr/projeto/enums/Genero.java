@@ -6,6 +6,10 @@ public enum Genero {
 
     private final String descricao;
 
+    public String toUpperCase() {
+        return  descricao.toUpperCase();
+    }
+
     Genero(String descricao) {
         this.descricao = descricao;
     }

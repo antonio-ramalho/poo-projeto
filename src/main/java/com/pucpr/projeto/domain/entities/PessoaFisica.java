@@ -3,8 +3,12 @@ package com.pucpr.projeto.domain.entities;
 import com.pucpr.projeto.domain.valueObjects.*;
 import com.pucpr.projeto.enums.Genero;
 
+import java.io.Serial;
+
 public class PessoaFisica extends Pessoa {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
     private String nome;
     private Cpf cpf;
     private Genero genero;
