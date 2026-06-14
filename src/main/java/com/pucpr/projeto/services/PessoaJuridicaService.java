@@ -5,6 +5,7 @@ import com.pucpr.projeto.domain.entities.Osc;
 import com.pucpr.projeto.domain.entities.Usuario;
 import com.pucpr.projeto.domain.valueObjects.*;
 import com.pucpr.projeto.enums.Categoria;
+import com.pucpr.projeto.enums.PerfilUsuario;
 import com.pucpr.projeto.enums.StatusDoc;
 import com.pucpr.projeto.exceptions.DomainException;
 import com.pucpr.projeto.repositories.OscRepository;
@@ -28,7 +29,6 @@ public class PessoaJuridicaService {
                              Categoria atuacao, String chavePix, DocOsc documentoInicial,
                              String login, String senha) {
 
-        // Regra de Negócio: Impede uma OSC de ser salva sem pelo menos um documento associado
         if (documentoInicial == null) {
             throw new DomainException("Uma OSC não pode ser cadastrada sem pelo menos um documento comprobatório associado.");
         }
@@ -42,13 +42,12 @@ public class PessoaJuridicaService {
                 dataFundacao, atuacao, chavePix);
 
         novaOsc.addDocumento(documentoInicial);
-        Usuario usuario = new Usuario(novaOsc.getId(), login, senha);
-
         oscRepository.salvar(novaOsc);
+
+        Usuario usuario = new Usuario(novaOsc.getId(), login, senha, PerfilUsuario.OSC);
         usuarioRepository.salvar(usuario);
     }
 
-    // Regra de Negócio: Mock de validação para simular aprovação/rejeição no backend operando offline
     public void validarDocumentoMock(String idOsc, String idDocumento, boolean aprovar) {
         Osc osc = oscRepository.buscarPorId(idOsc);
 
@@ -65,13 +64,16 @@ public class PessoaJuridicaService {
             throw new DomainException("O documento solicitado não foi encontrado nesta OSC.");
         }
 
-        // Recalcula o Score de confiança caso o documento tenha sido aprovado
         osc.calcularTrustScore();
         oscRepository.atualizar(osc);
     }
 
     public List<Osc> buscarTodas() {
         return oscRepository.buscarTodos();
+    }
+
+    public Osc buscarPorId(String idOsc) {
+        return oscRepository.buscarPorId(idOsc);
     }
 
     public void atualizarOsc(Osc osc) {

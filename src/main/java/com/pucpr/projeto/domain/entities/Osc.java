@@ -4,12 +4,15 @@ import com.pucpr.projeto.domain.valueObjects.*;
 import com.pucpr.projeto.enums.Categoria;
 import com.pucpr.projeto.enums.StatusDoc;
 
+import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Osc extends PessoaJuridica {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
     private Categoria atuacao;
     private String chavePix;
     private Double trustScore;

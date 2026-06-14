@@ -4,9 +4,11 @@ import com.pucpr.projeto.domain.entities.PessoaFisica;
 import com.pucpr.projeto.domain.entities.Usuario;
 import com.pucpr.projeto.domain.valueObjects.*;
 import com.pucpr.projeto.enums.Genero;
+import com.pucpr.projeto.enums.PerfilUsuario;
 import com.pucpr.projeto.exceptions.DomainException;
 import com.pucpr.projeto.repositories.PessoaFisicaRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
+import java.util.List;
 
 public class PessoaFisicaService {
 
@@ -27,9 +29,51 @@ public class PessoaFisicaService {
         }
 
         PessoaFisica pessoa = new PessoaFisica(nome, cpf, genero, dta, endereco, email, telefone);
-        Usuario usuario = new Usuario(pessoa.getId(), login, senha);
+        Usuario usuario = new Usuario(pessoa.getId(), login, senha, PerfilUsuario.DOADOR);
 
         pessoaRepository.salvar(pessoa);
         usuarioRepository.salvar(usuario);
+    }
+
+    public void atualizar(Telefone  telefone, Email email, String nome, Genero genero, String id, Endereco endereco) {
+        PessoaFisica pessoa =  pessoaRepository.buscarPorId(id);
+
+        if (pessoa == null) {
+            throw new DomainException("Essa pessoa não está cadastrada.");
+        }
+
+        if (telefone != null) {
+            pessoa.atualizarTelefone(telefone);
+        }
+
+        if (email != null) {
+            pessoa.atualizarEmail(email);
+        }
+
+        if (nome != null) {
+            pessoa.alterarNome(nome);
+        }
+
+        if (genero != null) {
+            pessoa.alterarGenero(genero);
+        }
+
+        if (endereco != null) {
+            pessoa.atualizarEndereco(endereco);
+        }
+
+        pessoaRepository.atualizar(pessoa);
+    }
+
+    public PessoaFisica buscarPorId(String id) {
+        return pessoaRepository.buscarPorId(id);
+    }
+
+    public List<PessoaFisica> buscarTodos() {
+        return pessoaRepository.buscarTodos();
+    }
+
+    public void excluir(String id) {
+        pessoaRepository.excluir(id);
     }
 }

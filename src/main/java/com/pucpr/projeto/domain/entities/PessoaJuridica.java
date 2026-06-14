@@ -1,10 +1,13 @@
 package com.pucpr.projeto.domain.entities;
 
 import com.pucpr.projeto.domain.valueObjects.*;
+
+import java.io.Serial;
 import java.time.LocalDate;
 
 public class PessoaJuridica extends Pessoa {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private Cnpj cnpj;
     private String nomeLegal;
     private String nomeComercial;
