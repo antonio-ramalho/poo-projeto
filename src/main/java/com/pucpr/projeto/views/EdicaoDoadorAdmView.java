@@ -1,14 +1,15 @@
 package com.pucpr.projeto.views;
 
-import com.pucpr.projeto.domain.entities.PessoaFisica;
+import com.pucpr.projeto.domain.entities.Doador;
 import com.pucpr.projeto.domain.entities.Usuario;
 import com.pucpr.projeto.domain.valueObjects.Cep;
 import com.pucpr.projeto.domain.valueObjects.Email;
 import com.pucpr.projeto.domain.valueObjects.Endereco;
 import com.pucpr.projeto.domain.valueObjects.Telefone;
+import com.pucpr.projeto.enums.Categoria;
 import com.pucpr.projeto.enums.Genero;
 import com.pucpr.projeto.exceptions.DomainException;
-import com.pucpr.projeto.services.PessoaFisicaService;
+import com.pucpr.projeto.services.DoadorService;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -17,17 +18,20 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.util.Arrays;
+
 public class EdicaoDoadorAdmView {
     private final Stage stage;
-    private final PessoaFisica doador;
-    private final PessoaFisicaService service;
-    private final Usuario adminLogado; // Para podermos voltar para a HomeAdm
+    private final Doador doador;
+    private final DoadorService service;
+    private final Usuario adminLogado;
     private Scene scene;
 
     private TextField txtNome, txtEmail, txtTelefone, txtCep, txtRua, txtBairro, txtCidade, txtNumero;
-    private ComboBox<String> comboGenero;
+    private ComboBox<String> comboGenero, comboPreferencia;
+    private CheckBox chkAnonimato;
 
-    public EdicaoDoadorAdmView(Stage stage, PessoaFisica doador, PessoaFisicaService service, Usuario adminLogado) {
+    public EdicaoDoadorAdmView(Stage stage, Doador doador, DoadorService service, Usuario adminLogado) {
         this.stage = stage;
         this.doador = doador;
         this.service = service;
@@ -44,7 +48,7 @@ public class EdicaoDoadorAdmView {
 
         GridPane grid = new GridPane();
         grid.setVgap(10);
-        grid.setHgap(10);
+        grid.setHgap(15);
 
         txtNome = new TextField(doador.getNome());
         txtEmail = new TextField(doador.getEmail().getEnderecoEmail());
@@ -54,21 +58,31 @@ public class EdicaoDoadorAdmView {
         comboGenero.getItems().addAll("MASCULINO", "FEMININO", "OUTRO", "NAO_INFORMADO");
         comboGenero.setValue(doador.getGenero() != null ? doador.getGenero().toUpperCase() : "NAO_INFORMADO");
 
+        comboPreferencia = new ComboBox<>();
+        Arrays.stream(Categoria.values()).forEach(c -> comboPreferencia.getItems().add(c.name()));
+        comboPreferencia.setValue(doador.getCategoria() != null ? doador.getCategoria().name() : null);
+
+        chkAnonimato = new CheckBox("Manter doações anônimas");
+        chkAnonimato.setSelected(doador.getAnonimato());
+
         txtCep = new TextField(doador.getEndereco().getNumeroCep().getNumeroCep());
-        txtRua = new TextField(doador.getEndereco().getRua() != null ? doador.getEndereco().getRua() : "");
-        txtBairro = new TextField(doador.getEndereco().getBairro() != null ? doador.getEndereco().getBairro() : "");
-        txtCidade = new TextField(doador.getEndereco().getCidade() != null ? doador.getEndereco().getCidade() : "");
-        txtNumero = new TextField(doador.getEndereco().getNumeroEndereco() != null ? doador.getEndereco().getNumeroEndereco() : "");
+        txtRua = new TextField(doador.getEndereco().getRua());
+        txtBairro = new TextField(doador.getEndereco().getBairro());
+        txtCidade = new TextField(doador.getEndereco().getCidade());
+        txtNumero = new TextField(doador.getEndereco().getNumeroEndereco());
 
         grid.add(new Label("Nome Completo:"), 0, 0); grid.add(txtNome, 1, 0);
         grid.add(new Label("E-mail:"), 0, 1);        grid.add(txtEmail, 1, 1);
         grid.add(new Label("Telefone:"), 0, 2);      grid.add(txtTelefone, 1, 2);
         grid.add(new Label("Gênero:"), 0, 3);        grid.add(comboGenero, 1, 3);
-        grid.add(new Label("CEP:"), 0, 4);           grid.add(txtCep, 1, 4);
-        grid.add(new Label("Rua/Av:"), 0, 5);        grid.add(txtRua, 1, 5);
-        grid.add(new Label("Número:"), 0, 6);        grid.add(txtNumero, 1, 6);
-        grid.add(new Label("Bairro:"), 0, 7);        grid.add(txtBairro, 1, 7);
-        grid.add(new Label("Cidade:"), 0, 8);        grid.add(txtCidade, 1, 8);
+        grid.add(new Label("Causa Preferida:"), 0, 4); grid.add(comboPreferencia, 1, 4);
+        grid.add(chkAnonimato, 1, 5);
+
+        grid.add(new Label("CEP:"), 2, 0);           grid.add(txtCep, 3, 0);
+        grid.add(new Label("Cidade:"), 2, 1);        grid.add(txtCidade, 3, 1);
+        grid.add(new Label("Rua/Av:"), 2, 2);        grid.add(txtRua, 3, 2);
+        grid.add(new Label("Bairro:"), 2, 3);        grid.add(txtBairro, 3, 3);
+        grid.add(new Label("Número:"), 2, 4);        grid.add(txtNumero, 3, 4);
 
         Button btnSalvar = new Button("Salvar Alterações");
         btnSalvar.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -79,8 +93,8 @@ public class EdicaoDoadorAdmView {
 
         HBox botoes = new HBox(15, btnSalvar, btnCancelar);
 
-        layout.getChildren().addAll(titulo, new Separator(), grid, botoes);
-        this.scene = new Scene(layout, 500, 500);
+        layout.getChildren().addAll(titulo, new Separator(), grid, new Separator(), botoes);
+        this.scene = new Scene(layout, 650, 450);
     }
 
     private void salvarEdicao() {
@@ -88,6 +102,8 @@ public class EdicaoDoadorAdmView {
             Telefone telefone = txtTelefone.getText().isEmpty() ? null : new Telefone(txtTelefone.getText());
             Email email = txtEmail.getText().isEmpty() ? null : new Email(txtEmail.getText());
             Genero genero = Genero.valueOf(comboGenero.getValue());
+            Categoria preferencia = comboPreferencia.getValue() != null ? Categoria.valueOf(comboPreferencia.getValue()) : null;
+            boolean anonimato = chkAnonimato.isSelected();
 
             Endereco endereco = null;
             if (!txtCep.getText().isEmpty()) {
@@ -95,7 +111,7 @@ public class EdicaoDoadorAdmView {
                 endereco = new Endereco(cep, txtRua.getText(), txtBairro.getText(), txtCidade.getText(), txtNumero.getText());
             }
 
-            service.atualizar(telefone, email, txtNome.getText(), genero, doador.getId(), endereco);
+            service.atualizar(telefone, email, txtNome.getText(), genero, doador.getId(), endereco, preferencia, anonimato);
 
             new Alert(Alert.AlertType.INFORMATION, "Doador atualizado com sucesso!").showAndWait();
             voltarParaHome();

@@ -14,7 +14,7 @@ public class Application extends javafx.application.Application {
 
         LoginView loginView = new LoginView(primaryStage, usuarioService);
 
-        primaryStage.setTitle("Sistema Coopafi");
+        primaryStage.setTitle("Grative");
         primaryStage.setScene(loginView.getScene());
         primaryStage.show();
     }

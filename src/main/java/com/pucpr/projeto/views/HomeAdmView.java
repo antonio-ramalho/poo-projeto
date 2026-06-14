@@ -1,13 +1,13 @@
 package com.pucpr.projeto.views;
 
+import com.pucpr.projeto.domain.entities.Doador;
 import com.pucpr.projeto.domain.entities.Osc;
-import com.pucpr.projeto.domain.entities.PessoaFisica;
 import com.pucpr.projeto.domain.entities.Usuario;
 import com.pucpr.projeto.exceptions.DomainException;
+import com.pucpr.projeto.repositories.DoadorRepository;
 import com.pucpr.projeto.repositories.OscRepository;
-import com.pucpr.projeto.repositories.PessoaFisicaRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
-import com.pucpr.projeto.services.PessoaFisicaService;
+import com.pucpr.projeto.services.DoadorService;
 import com.pucpr.projeto.services.PessoaJuridicaService;
 import com.pucpr.projeto.services.UsuarioService;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,9 +21,8 @@ public class HomeAdmView {
     private final Stage stage;
     private final Usuario adminLogado;
     private Scene scene;
-
     private PessoaJuridicaService oscService;
-    private PessoaFisicaService doadorService;
+    private DoadorService doadorService;
     private UsuarioService usuarioService;
 
     public HomeAdmView(Stage stage, Usuario adminLogado) {
@@ -32,7 +31,7 @@ public class HomeAdmView {
 
         this.usuarioService = new UsuarioService(new UsuarioRepository());
         this.oscService = new PessoaJuridicaService(new UsuarioRepository(), new OscRepository());
-        this.doadorService = new PessoaFisicaService(new UsuarioRepository(), new PessoaFisicaRepository());
+        this.doadorService = new DoadorService(new UsuarioRepository(), new DoadorRepository());
 
         inicializarTela();
     }
@@ -55,7 +54,7 @@ public class HomeAdmView {
         painelAbas.getTabs().add(criarAbaUsuarios());
 
         layout.getChildren().addAll(titulo, painelAbas, btnSair);
-        this.scene = new Scene(layout, 800, 600);
+        this.scene = new Scene(layout, 1000, 600);
     }
 
     private Tab criarAbaOscs() {
@@ -64,11 +63,26 @@ public class HomeAdmView {
         layout.setPadding(new Insets(10));
 
         TableView<Osc> tabela = new TableView<>();
+
         TableColumn<Osc, String> colNome = new TableColumn<>("Nome Fantasia");
         colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNomeComercial()));
+
         TableColumn<Osc, String> colCnpj = new TableColumn<>("CNPJ");
-        colCnpj.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCnpj().getNumeroCnpj()));
-        tabela.getColumns().addAll(colNome, colCnpj);
+        colCnpj.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCnpj() != null ? data.getValue().getCnpj().getNumeroCnpj() : ""));
+
+        TableColumn<Osc, String> colEmail = new TableColumn<>("E-mail Contato");
+        colEmail.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail().getEnderecoEmail()));
+
+        TableColumn<Osc, String> colTelefone = new TableColumn<>("Telefone");
+        colTelefone.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTelefone().getNumeroTelefone()));
+
+        TableColumn<Osc, String> colCidade = new TableColumn<>("Sede (Cidade)");
+        colCidade.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEndereco().getCidade()));
+
+        TableColumn<Osc, String> colAtuacao = new TableColumn<>("Área de Atuação");
+        colAtuacao.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAtuacao() != null ? data.getValue().getAtuacao().name() : ""));
+
+        tabela.getColumns().addAll(colNome, colCnpj, colEmail, colTelefone, colCidade, colAtuacao);
         tabela.getItems().setAll(oscService.buscarTodas());
 
         Button btnEditar = new Button("Editar Selecionada");
@@ -83,16 +97,18 @@ public class HomeAdmView {
         });
 
         Button btnExcluir = new Button("Excluir OSC");
+        btnExcluir.setStyle("-fx-text-fill: red;");
         btnExcluir.setOnAction(e -> {
             Osc selecionada = tabela.getSelectionModel().getSelectedItem();
             if (selecionada != null) {
                 oscService.excluirOsc(selecionada.getId());
-                tabela.getItems().setAll(oscService.buscarTodas()); // Recarrega a tabela
+                usuarioService.excluir(selecionada.getId());
+                tabela.getItems().setAll(oscService.buscarTodas());
             }
         });
 
         HBox botoes = new HBox(10, btnEditar, btnExcluir);
-        layout.getChildren().addAll(new Label("OSCs Cadastradas:"), tabela, botoes);
+        layout.getChildren().addAll(new Label("OSCs Cadastradas (Detalhado):"), tabela, botoes);
         aba.setContent(layout);
         return aba;
     }
@@ -102,19 +118,34 @@ public class HomeAdmView {
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(10));
 
-        TableView<PessoaFisica> tabela = new TableView<>();
-        TableColumn<PessoaFisica, String> colNome = new TableColumn<>("Nome Completo");
+        TableView<Doador> tabela = new TableView<>();
+
+        TableColumn<Doador, String> colNome = new TableColumn<>("Nome Completo");
         colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
-        TableColumn<PessoaFisica, String> colCpf = new TableColumn<>("CPF");
-        colCpf.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCpf().getNumeroCpf()));
-        tabela.getColumns().addAll(colNome, colCpf);
+
+        TableColumn<Doador, String> colCpf = new TableColumn<>("CPF");
+        colCpf.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCpf().getNumeroCpf() != null ? data.getValue().getCpf().getNumeroCpf() : ""));
+
+        TableColumn<Doador, String> colEmail = new TableColumn<>("E-mail");
+        colEmail.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail().getEnderecoEmail()));
+
+        TableColumn<Doador, String> colDataNasc = new TableColumn<>("Nascimento");
+        colDataNasc.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDataNascimento().getFormatada()));
+
+        TableColumn<Doador, String> colCidade = new TableColumn<>("Cidade");
+        colCidade.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEndereco().getCidade() != null ? data.getValue().getEndereco().getCidade() : "Não informada"));
+
+        TableColumn<Doador, String> colPreferencia = new TableColumn<>("Causa Preferida");
+        colPreferencia.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCategoria().getDescricao() != null ? data.getValue().getCategoria().name() : "Geral"));
+
+        tabela.getColumns().addAll(colNome, colCpf, colEmail, colDataNasc, colCidade, colPreferencia);
         tabela.getItems().setAll(doadorService.buscarTodos());
 
         Button btnEditar = new Button("Editar Selecionado");
         btnEditar.setOnAction(e -> {
-            PessoaFisica selecionada = tabela.getSelectionModel().getSelectedItem();
-            if (selecionada != null) {
-                EdicaoDoadorAdmView edicaoView = new EdicaoDoadorAdmView(stage, selecionada, doadorService, adminLogado);
+            Doador selecionado = tabela.getSelectionModel().getSelectedItem();
+            if (selecionado != null) {
+                EdicaoDoadorAdmView edicaoView = new EdicaoDoadorAdmView(stage, selecionado, doadorService, adminLogado);
                 stage.setScene(edicaoView.getScene());
             } else {
                 new Alert(Alert.AlertType.WARNING, "Selecione um Doador na tabela primeiro.").showAndWait();
@@ -122,16 +153,18 @@ public class HomeAdmView {
         });
 
         Button btnExcluir = new Button("Excluir Doador");
+        btnExcluir.setStyle("-fx-text-fill: red;");
         btnExcluir.setOnAction(e -> {
-            PessoaFisica selecionada = tabela.getSelectionModel().getSelectedItem();
-            if (selecionada != null) {
-                doadorService.excluir(selecionada.getId());
+            Doador selecionado = tabela.getSelectionModel().getSelectedItem();
+            if (selecionado != null) {
+                doadorService.excluir(selecionado.getId());
+                usuarioService.excluir(selecionado.getId());
                 tabela.getItems().setAll(doadorService.buscarTodos());
             }
         });
 
         HBox botoes = new HBox(10, btnEditar, btnExcluir);
-        layout.getChildren().addAll(new Label("Doadores Cadastrados:"), tabela, botoes);
+        layout.getChildren().addAll(new Label("Doadores Cadastrados (Detalhado):"), tabela, botoes);
         aba.setContent(layout);
         return aba;
     }

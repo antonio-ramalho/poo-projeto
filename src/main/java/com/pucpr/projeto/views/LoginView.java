@@ -1,14 +1,14 @@
 package com.pucpr.projeto.views;
 
-import com.pucpr.projeto.domain.entities.PessoaFisica;
 import com.pucpr.projeto.domain.entities.Osc;
 import com.pucpr.projeto.domain.entities.Usuario;
 import com.pucpr.projeto.enums.PerfilUsuario;
 import com.pucpr.projeto.exceptions.DomainException;
+import com.pucpr.projeto.repositories.DoadorRepository;
 import com.pucpr.projeto.repositories.OscRepository;
 import com.pucpr.projeto.repositories.PessoaFisicaRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
-import com.pucpr.projeto.services.PessoaFisicaService;
+import com.pucpr.projeto.services.DoadorService;
 import com.pucpr.projeto.services.PessoaJuridicaService;
 import com.pucpr.projeto.services.UsuarioService;
 import javafx.geometry.Insets;
@@ -89,7 +89,7 @@ public class LoginView {
     }
 
     private void irParaCadastroDoador() {
-        PessoaFisicaService cadastroService = new PessoaFisicaService(new UsuarioRepository(), new PessoaFisicaRepository());
+        DoadorService cadastroService = new DoadorService(new UsuarioRepository(), new DoadorRepository());
         CadastroDoadorView cadastroView = new CadastroDoadorView(stage, cadastroService);
         stage.setScene(cadastroView.getScene());
     }
