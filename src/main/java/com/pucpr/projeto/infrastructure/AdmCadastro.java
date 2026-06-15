@@ -8,7 +8,7 @@ import com.pucpr.projeto.enums.PerfilUsuario;
 import com.pucpr.projeto.repositories.PessoaFisicaRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
 
-public class admCadastro {
+public class AdmCadastro {
     public static void main(String[] args) {
 
        String nome =  "Antonio Ramalho";

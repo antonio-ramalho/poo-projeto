@@ -1,5 +1,6 @@
 package com.pucpr.projeto.views;
 
+import com.pucpr.projeto.domain.entities.Depoimento;
 import com.pucpr.projeto.domain.entities.Doador;
 import com.pucpr.projeto.domain.entities.Osc;
 import com.pucpr.projeto.domain.entities.Usuario;
@@ -7,9 +8,11 @@ import com.pucpr.projeto.domain.valueObjects.*;
 import com.pucpr.projeto.enums.Categoria;
 import com.pucpr.projeto.enums.Genero;
 import com.pucpr.projeto.exceptions.DomainException;
+import com.pucpr.projeto.repositories.DepoimentoRepository;
 import com.pucpr.projeto.repositories.DoadorRepository;
 import com.pucpr.projeto.repositories.OscRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
+import com.pucpr.projeto.services.DepoimentoService;
 import com.pucpr.projeto.services.DoadorService;
 import com.pucpr.projeto.services.PessoaJuridicaService;
 import com.pucpr.projeto.services.UsuarioService;
@@ -19,6 +22,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.util.Arrays;
@@ -29,20 +33,31 @@ public class HomeDoadorView {
     private final Usuario usuarioLogado;
     private Doador doadorLogado;
     private Scene scene;
-    private DoadorService pfService; // DoadorService gerenciando o doador
+
+    // Services do sistema
+    private DoadorService pfService;
     private UsuarioService usuarioService;
     private PessoaJuridicaService pjService;
-    private TextField txtNome, txtEmail, txtTelefone;
-    private TextField txtCep, txtCidade, txtRua, txtBairro, txtNumero;
+    private DepoimentoService depoimentoService; // <-- Nova Service do seu CRUD
+
+    // Componentes de Tabela
+    private TableView<Osc> tabelaOscs;
+    private TableView<Depoimento> tabelaDepoimentos;
+
+    // Campos do Perfil
+    private TextField txtNome, txtEmail, txtTelefone, txtCep, txtCidade, txtRua, txtBairro, txtNumero;
     private ComboBox<String> comboGenero, comboPreferencia;
     private CheckBox chkAnonimato;
 
     public HomeDoadorView(Stage stage, Usuario usuarioLogado) {
         this.stage = stage;
         this.usuarioLogado = usuarioLogado;
+
         this.usuarioService = new UsuarioService(new UsuarioRepository());
         this.pfService = new DoadorService(new UsuarioRepository(), new DoadorRepository());
         this.pjService = new PessoaJuridicaService(new UsuarioRepository(), new OscRepository());
+        this.depoimentoService = new DepoimentoService(new DepoimentoRepository());
+
         this.doadorLogado = pfService.buscarPorId(usuarioLogado.getId());
 
         inicializarTela();
@@ -65,21 +80,22 @@ public class HomeDoadorView {
         painelAbas.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         painelAbas.getTabs().add(criarAbaExplorar());
+        painelAbas.getTabs().add(criarAbaDepoimentos()); // <-- Aba Nova
         painelAbas.getTabs().add(criarAbaPerfil());
 
         layout.getChildren().addAll(cabecalho, new Separator(), painelAbas);
-        this.scene = new Scene(layout, 750, 600); // Ajuste na largura
+        this.scene = new Scene(layout, 750, 600);
     }
 
+    // --- ABA 1: Explorar OSCs ---
     private Tab criarAbaExplorar() {
         Tab aba = new Tab("Explorar OSCs");
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(15));
 
-        Label lblInstrucao = new Label("Conheça as Organizações cadastradas na plataforma:");
+        Label lblInstrucao = new Label("Selecione uma Instituição na tabela para avaliar sua transparência:");
 
-        TableView<Osc> tabela = new TableView<>();
-
+        tabelaOscs = new TableView<>();
         TableColumn<Osc, String> colNomeComercial = new TableColumn<>("Nome da Instituição");
         colNomeComercial.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNomeComercial()));
         colNomeComercial.setPrefWidth(200);
@@ -88,14 +104,140 @@ public class HomeDoadorView {
         colCategoria.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAtuacao().name()));
         colCategoria.setPrefWidth(150);
 
-        tabela.getColumns().addAll(colNomeComercial, colCategoria);
-        tabela.getItems().setAll(pjService.buscarTodas());
+        tabelaOscs.getColumns().addAll(colNomeComercial, colCategoria);
+        tabelaOscs.getItems().setAll(pjService.buscarTodas());
 
-        layout.getChildren().addAll(lblInstrucao, tabela);
+        Button btnAvaliar = new Button("★ Avaliar Instituição Selecionada");
+        btnAvaliar.setStyle("-fx-background-color: #FFD700; -fx-text-fill: black; -fx-font-weight: bold;");
+        btnAvaliar.setOnAction(e -> abrirModalAvaliacao(null)); // null significa nova avaliação
+
+        layout.getChildren().addAll(lblInstrucao, tabelaOscs, btnAvaliar);
         aba.setContent(layout);
         return aba;
     }
 
+    // --- ABA 2: Novo CRUD de Depoimentos ---
+    private Tab criarAbaDepoimentos() {
+        Tab aba = new Tab("Meus Depoimentos");
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(15));
+
+        tabelaDepoimentos = new TableView<>();
+
+        TableColumn<Depoimento, String> colOsc = new TableColumn<>("Instituição Avaliada");
+        // Pega o ID da OSC salvo no depoimento e busca o nome dela em tempo real!
+        colOsc.setCellValueFactory(data -> {
+            Osc oscAvaliada = pjService.buscarPorId(data.getValue().getIdOsc());
+            return new SimpleStringProperty(oscAvaliada != null ? oscAvaliada.getNomeComercial() : "ONG Excluída");
+        });
+        colOsc.setPrefWidth(180);
+
+        TableColumn<Depoimento, String> colNota = new TableColumn<>("Nota (1 a 5)");
+        colNota.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNota().toString() + " ★"));
+
+        TableColumn<Depoimento, String> colData = new TableColumn<>("Data");
+        colData.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDataAvaliacao().toString()));
+
+        TableColumn<Depoimento, String> colComentario = new TableColumn<>("Comentário");
+        colComentario.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getComentario()));
+        colComentario.setPrefWidth(250);
+
+        tabelaDepoimentos.getColumns().addAll(colOsc, colNota, colData, colComentario);
+        atualizarTabelaDepoimentos();
+
+        Button btnEditar = new Button("Editar Avaliação");
+        btnEditar.setOnAction(e -> {
+            Depoimento selecionado = tabelaDepoimentos.getSelectionModel().getSelectedItem();
+            if (selecionado != null) abrirModalAvaliacao(selecionado);
+            else new Alert(Alert.AlertType.WARNING, "Selecione um depoimento para editar.").showAndWait();
+        });
+
+        Button btnExcluir = new Button("Excluir Avaliação");
+        btnExcluir.setStyle("-fx-text-fill: red;");
+        btnExcluir.setOnAction(e -> {
+            Depoimento selecionado = tabelaDepoimentos.getSelectionModel().getSelectedItem();
+            if (selecionado != null) {
+                depoimentoService.excluir(selecionado.getId());
+                atualizarTabelaDepoimentos();
+                new Alert(Alert.AlertType.INFORMATION, "Depoimento apagado.").showAndWait();
+            }
+        });
+
+        HBox botoes = new HBox(10, btnEditar, btnExcluir);
+        layout.getChildren().addAll(new Label("Gerencie suas avaliações feitas na plataforma:"), tabelaDepoimentos, botoes);
+        aba.setContent(layout);
+        return aba;
+    }
+
+    private void atualizarTabelaDepoimentos() {
+        tabelaDepoimentos.getItems().setAll(depoimentoService.buscarPorDoador(doadorLogado.getId()));
+    }
+
+    // --- MODAL FLUTUANTE (CREATE E UPDATE DO DEPOIMENTO) ---
+    private void abrirModalAvaliacao(Depoimento depoimentoExistente) {
+        Osc oscAlvo = null;
+
+        if (depoimentoExistente == null) {
+            // É um Create: Precisa ter selecionado na tabela de OSCs
+            oscAlvo = tabelaOscs.getSelectionModel().getSelectedItem();
+            if (oscAlvo == null) {
+                new Alert(Alert.AlertType.WARNING, "Selecione uma Instituição na tabela primeiro.").showAndWait();
+                return;
+            }
+        } else {
+            // É um Update: Puxa a OSC vinculada ao depoimento
+            oscAlvo = pjService.buscarPorId(depoimentoExistente.getIdOsc());
+        }
+
+        Stage modal = new Stage();
+        modal.initModality(Modality.APPLICATION_MODAL); // Bloqueia a tela de trás
+        modal.setTitle(depoimentoExistente == null ? "Nova Avaliação" : "Editando Avaliação");
+
+        VBox layout = new VBox(15);
+        layout.setPadding(new Insets(20));
+
+        Label titulo = new Label("Avaliando: " + (oscAlvo != null ? oscAlvo.getNomeComercial() : "ONG"));
+        titulo.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        ComboBox<Integer> comboNota = new ComboBox<>();
+        comboNota.getItems().addAll(1, 2, 3, 4, 5);
+        comboNota.setPromptText("Nota (1 a 5)");
+
+        TextArea txtComentario = new TextArea();
+        txtComentario.setPromptText("Escreva sua experiência sobre a transparência da ONG...");
+        txtComentario.setWrapText(true);
+        txtComentario.setPrefRowCount(4);
+
+        if (depoimentoExistente != null) {
+            comboNota.setValue(depoimentoExistente.getNota());
+            txtComentario.setText(depoimentoExistente.getComentario());
+        }
+
+        Button btnSalvar = new Button("Salvar Depoimento");
+        btnSalvar.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+
+        final Osc finalOscAlvo = oscAlvo;
+        btnSalvar.setOnAction(ev -> {
+            try {
+                if (depoimentoExistente == null) {
+                    depoimentoService.avaliar(doadorLogado.getId(), finalOscAlvo.getId(), comboNota.getValue(), txtComentario.getText());
+                } else {
+                    depoimentoService.atualizar(depoimentoExistente.getId(), comboNota.getValue(), txtComentario.getText());
+                }
+                atualizarTabelaDepoimentos();
+                modal.close();
+                new Alert(Alert.AlertType.INFORMATION, "Avaliação salva com sucesso!").showAndWait();
+            } catch (DomainException ex) {
+                new Alert(Alert.AlertType.WARNING, ex.getMessage()).showAndWait();
+            }
+        });
+
+        layout.getChildren().addAll(titulo, new Label("Sua Nota:"), comboNota, new Label("Depoimento:"), txtComentario, btnSalvar);
+        modal.setScene(new Scene(layout, 350, 300));
+        modal.showAndWait();
+    }
+
+    // --- ABA 3: Perfil do Doador (Mantida Intacta) ---
     private Tab criarAbaPerfil() {
         Tab aba = new Tab("Meu Perfil");
         GridPane grid = new GridPane();
@@ -109,11 +251,11 @@ public class HomeDoadorView {
 
         comboGenero = new ComboBox<>();
         comboGenero.getItems().addAll("MASCULINO", "FEMININO", "OUTRO", "NAO_INFORMADO");
-        comboGenero.setValue(doadorLogado.getGenero() != null ? doadorLogado.getGenero().toUpperCase() : "NAO_INFORMADO");
+        comboGenero.setValue(doadorLogado.getGenero().getDescricao() != null ? doadorLogado.getGenero().toUpperCase() : "NAO_INFORMADO");
 
         comboPreferencia = new ComboBox<>();
         Arrays.stream(Categoria.values()).forEach(c -> comboPreferencia.getItems().add(c.name()));
-        comboPreferencia.setValue(doadorLogado.getCategoria() != null ? doadorLogado.getCategoria().name() : null);
+        comboPreferencia.setValue(doadorLogado.getCategoria().name());
 
         chkAnonimato = new CheckBox("Manter minhas doações anônimas");
         chkAnonimato.setSelected(doadorLogado.getAnonimato());
@@ -146,7 +288,7 @@ public class HomeDoadorView {
         btnExcluir.setOnAction(e -> excluirConta());
 
         HBox botoes = new HBox(15, btnAtualizar, btnExcluir);
-        grid.add(botoes, 0, 7, 4, 1); // Expandido para cruzar as colunas
+        grid.add(botoes, 0, 7, 4, 1);
 
         aba.setContent(grid);
         return aba;
@@ -157,7 +299,6 @@ public class HomeDoadorView {
             Telefone telefone = txtTelefone.getText().isEmpty() ? null : new Telefone(txtTelefone.getText());
             Email email = txtEmail.getText().isEmpty() ? null : new Email(txtEmail.getText());
             Genero genero = Genero.valueOf(comboGenero.getValue());
-
             Categoria preferencia = comboPreferencia.getValue() != null ? Categoria.valueOf(comboPreferencia.getValue()) : null;
             boolean anonimato = chkAnonimato.isSelected();
 
@@ -168,9 +309,7 @@ public class HomeDoadorView {
             }
 
             pfService.atualizar(telefone, email, txtNome.getText(), genero, doadorLogado.getId(), endereco, preferencia, anonimato);
-
             new Alert(Alert.AlertType.INFORMATION, "Perfil atualizado com sucesso!").showAndWait();
-
             this.doadorLogado = pfService.buscarPorId(usuarioLogado.getId());
 
         } catch (DomainException ex) {
@@ -191,19 +330,15 @@ public class HomeDoadorView {
             try {
                 pfService.excluir(doadorLogado.getId());
                 usuarioService.excluir(usuarioLogado.getId());
-
                 new Alert(Alert.AlertType.INFORMATION, "Conta excluída com sucesso.").showAndWait();
                 fazerLogout();
-
             } catch (DomainException ex) {
                 new Alert(Alert.AlertType.ERROR, ex.getMessage()).showAndWait();
             }
         }
     }
 
-    public Scene getScene() {
-        return this.scene;
-    }
+    public Scene getScene() { return this.scene; }
 
     private void fazerLogout() {
         LoginView loginView = new LoginView(stage, usuarioService);
