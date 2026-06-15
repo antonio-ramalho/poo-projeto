@@ -34,17 +34,14 @@ public class HomeDoadorView {
     private Doador doadorLogado;
     private Scene scene;
 
-    // Services do sistema
     private DoadorService pfService;
     private UsuarioService usuarioService;
     private PessoaJuridicaService pjService;
-    private DepoimentoService depoimentoService; // <-- Nova Service do seu CRUD
+    private DepoimentoService depoimentoService;
 
-    // Componentes de Tabela
     private TableView<Osc> tabelaOscs;
     private TableView<Depoimento> tabelaDepoimentos;
 
-    // Campos do Perfil
     private TextField txtNome, txtEmail, txtTelefone, txtCep, txtCidade, txtRua, txtBairro, txtNumero;
     private ComboBox<String> comboGenero, comboPreferencia;
     private CheckBox chkAnonimato;
@@ -80,14 +77,13 @@ public class HomeDoadorView {
         painelAbas.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         painelAbas.getTabs().add(criarAbaExplorar());
-        painelAbas.getTabs().add(criarAbaDepoimentos()); // <-- Aba Nova
+        painelAbas.getTabs().add(criarAbaDepoimentos());
         painelAbas.getTabs().add(criarAbaPerfil());
 
         layout.getChildren().addAll(cabecalho, new Separator(), painelAbas);
         this.scene = new Scene(layout, 750, 600);
     }
 
-    // --- ABA 1: Explorar OSCs ---
     private Tab criarAbaExplorar() {
         Tab aba = new Tab("Explorar OSCs");
         VBox layout = new VBox(10);
@@ -109,14 +105,13 @@ public class HomeDoadorView {
 
         Button btnAvaliar = new Button("★ Avaliar Instituição Selecionada");
         btnAvaliar.setStyle("-fx-background-color: #FFD700; -fx-text-fill: black; -fx-font-weight: bold;");
-        btnAvaliar.setOnAction(e -> abrirModalAvaliacao(null)); // null significa nova avaliação
+        btnAvaliar.setOnAction(e -> abrirModalAvaliacao(null));
 
         layout.getChildren().addAll(lblInstrucao, tabelaOscs, btnAvaliar);
         aba.setContent(layout);
         return aba;
     }
 
-    // --- ABA 2: Novo CRUD de Depoimentos ---
     private Tab criarAbaDepoimentos() {
         Tab aba = new Tab("Meus Depoimentos");
         VBox layout = new VBox(10);
@@ -125,7 +120,7 @@ public class HomeDoadorView {
         tabelaDepoimentos = new TableView<>();
 
         TableColumn<Depoimento, String> colOsc = new TableColumn<>("Instituição Avaliada");
-        // Pega o ID da OSC salvo no depoimento e busca o nome dela em tempo real!
+
         colOsc.setCellValueFactory(data -> {
             Osc oscAvaliada = pjService.buscarPorId(data.getValue().getIdOsc());
             return new SimpleStringProperty(oscAvaliada != null ? oscAvaliada.getNomeComercial() : "ONG Excluída");
@@ -173,24 +168,21 @@ public class HomeDoadorView {
         tabelaDepoimentos.getItems().setAll(depoimentoService.buscarPorDoador(doadorLogado.getId()));
     }
 
-    // --- MODAL FLUTUANTE (CREATE E UPDATE DO DEPOIMENTO) ---
     private void abrirModalAvaliacao(Depoimento depoimentoExistente) {
         Osc oscAlvo = null;
 
         if (depoimentoExistente == null) {
-            // É um Create: Precisa ter selecionado na tabela de OSCs
             oscAlvo = tabelaOscs.getSelectionModel().getSelectedItem();
             if (oscAlvo == null) {
                 new Alert(Alert.AlertType.WARNING, "Selecione uma Instituição na tabela primeiro.").showAndWait();
                 return;
             }
         } else {
-            // É um Update: Puxa a OSC vinculada ao depoimento
             oscAlvo = pjService.buscarPorId(depoimentoExistente.getIdOsc());
         }
 
         Stage modal = new Stage();
-        modal.initModality(Modality.APPLICATION_MODAL); // Bloqueia a tela de trás
+        modal.initModality(Modality.APPLICATION_MODAL);
         modal.setTitle(depoimentoExistente == null ? "Nova Avaliação" : "Editando Avaliação");
 
         VBox layout = new VBox(15);
@@ -237,7 +229,6 @@ public class HomeDoadorView {
         modal.showAndWait();
     }
 
-    // --- ABA 3: Perfil do Doador (Mantida Intacta) ---
     private Tab criarAbaPerfil() {
         Tab aba = new Tab("Meu Perfil");
         GridPane grid = new GridPane();
