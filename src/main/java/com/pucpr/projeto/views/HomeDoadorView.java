@@ -28,6 +28,10 @@ import javafx.stage.Stage;
 import java.util.Arrays;
 import java.util.Optional;
 
+import com.pucpr.projeto.domain.entities.Doacao;
+import com.pucpr.projeto.repositories.DoacaoRepository;
+import com.pucpr.projeto.services.DoacaoService;
+
 public class HomeDoadorView {
     private final Stage stage;
     private final Usuario usuarioLogado;
@@ -42,6 +46,8 @@ public class HomeDoadorView {
     private TableView<Osc> tabelaOscs;
     private TableView<Depoimento> tabelaDepoimentos;
 
+    private DoacaoService doacaoService;
+
     private TextField txtNome, txtEmail, txtTelefone, txtCep, txtCidade, txtRua, txtBairro, txtNumero;
     private ComboBox<String> comboGenero, comboPreferencia;
     private CheckBox chkAnonimato;
@@ -49,6 +55,8 @@ public class HomeDoadorView {
     public HomeDoadorView(Stage stage, Usuario usuarioLogado) {
         this.stage = stage;
         this.usuarioLogado = usuarioLogado;
+
+        this.doacaoService = new DoacaoService(new DoacaoRepository());
 
         this.usuarioService = new UsuarioService(new UsuarioRepository());
         this.pfService = new DoadorService(new UsuarioRepository(), new DoadorRepository());
@@ -79,9 +87,31 @@ public class HomeDoadorView {
         painelAbas.getTabs().add(criarAbaExplorar());
         painelAbas.getTabs().add(criarAbaDepoimentos());
         painelAbas.getTabs().add(criarAbaPerfil());
+        painelAbas.getTabs().add(criarAbaDoacoes());
 
         layout.getChildren().addAll(cabecalho, new Separator(), painelAbas);
         this.scene = new Scene(layout, 750, 600);
+    }
+
+    private Tab criarAbaDoacoes() {
+        Tab aba = new Tab("Minhas Doações");
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(15));
+
+        TableView<Doacao> tabelaDoacoes = new TableView<>();
+        TableColumn<Doacao, String> colData = new TableColumn<>("Data");
+        colData.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDataDoa().toString()));
+        TableColumn<Doacao, String> colValor = new TableColumn<>("Valor (R$)");
+        colValor.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getValor().getValor().toString()));
+        TableColumn<Doacao, String> colMensagem = new TableColumn<>("Mensagem");
+        colMensagem.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getMensagem()));
+
+        tabelaDoacoes.getColumns().addAll(colData, colValor, colMensagem);
+        tabelaDoacoes.getItems().setAll(doacaoService.buscarPorDoador(String.valueOf(doadorLogado.getId())));
+
+        layout.getChildren().addAll(new Label("Histórico de doações:"), tabelaDoacoes);
+        aba.setContent(layout);
+        return aba;
     }
 
     private Tab criarAbaExplorar() {
@@ -107,10 +137,25 @@ public class HomeDoadorView {
         btnAvaliar.setStyle("-fx-background-color: #FFD700; -fx-text-fill: black; -fx-font-weight: bold;");
         btnAvaliar.setOnAction(e -> abrirModalAvaliacao(null));
 
-        layout.getChildren().addAll(lblInstrucao, tabelaOscs, btnAvaliar);
+        // Botão de Doação adicionado
+        Button btnDoar = new Button("Doar para Selecionada");
+        btnDoar.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnDoar.setOnAction(e -> {
+            Osc selecionada = tabelaOscs.getSelectionModel().getSelectedItem();
+            if (selecionada != null) {
+                CadastroDoacaoView tela = new CadastroDoacaoView(stage, doacaoService, usuarioLogado, selecionada);
+                stage.setScene(tela.getScene());
+            } else {
+                new Alert(Alert.AlertType.WARNING, "Selecione uma Instituição na tabela primeiro.").showAndWait();
+            }
+        });
+
+        HBox botoes = new HBox(10, btnAvaliar, btnDoar);
+        layout.getChildren().addAll(lblInstrucao, tabelaOscs, botoes);
         aba.setContent(layout);
         return aba;
     }
+
 
     private Tab criarAbaDepoimentos() {
         Tab aba = new Tab("Meus Depoimentos");
