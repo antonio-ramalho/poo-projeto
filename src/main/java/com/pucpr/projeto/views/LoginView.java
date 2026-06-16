@@ -8,9 +8,11 @@ import com.pucpr.projeto.repositories.DoadorRepository;
 import com.pucpr.projeto.repositories.OscRepository;
 import com.pucpr.projeto.repositories.PessoaFisicaRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
+import com.pucpr.projeto.repositories.DespesaRepository;
 import com.pucpr.projeto.services.DoadorService;
 import com.pucpr.projeto.services.PessoaJuridicaService;
 import com.pucpr.projeto.services.UsuarioService;
+import com.pucpr.projeto.services.DespesaService;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -77,10 +79,13 @@ public class LoginView {
 
         if (perfil == PerfilUsuario.OSC) {
             PessoaJuridicaService pjService = new PessoaJuridicaService(new UsuarioRepository(), new OscRepository());
-
             Osc osc = pjService.buscarPorId(usuarioLogado.getId());
 
-            HomeOscView home = new HomeOscView(stage, usuarioLogado, osc);
+            // Inicializando dependências para o Módulo Financeiro
+            DespesaRepository despesaRepository = new DespesaRepository();
+            DespesaService despesaService = new DespesaService(despesaRepository);
+
+            HomeOscView home = new HomeOscView(stage, usuarioLogado, osc, despesaService);
             stage.setScene(home.getScene());
             return;
         }
