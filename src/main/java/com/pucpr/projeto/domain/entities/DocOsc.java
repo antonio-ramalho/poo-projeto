@@ -30,6 +30,18 @@ public class DocOsc implements Serializable {
         this.status = sts;
     }
 
+    public void alterarDataEmissao(LocalDate dataEmissao) {
+        this.dataEmissao = dataEmissao;
+    }
+
+    public void alterarTipo(TipoDoc tipo) {
+        this.tipo = tipo;
+    }
+
+    public void alterarUrlArquivo(String urlArquivo) {
+        this.urlArquivo = urlArquivo;
+    }
+
     public String getId() { return id; }
     public LocalDate getDataEmissao() { return dataEmissao; }
     public TipoDoc getTipo() { return tipo; }
