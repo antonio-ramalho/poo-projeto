@@ -1,17 +1,5 @@
 package com.pucpr.projeto.views;
 
-import com.pucpr.projeto.domain.entities.Campanha;
-import com.pucpr.projeto.domain.entities.Osc;
-import com.pucpr.projeto.domain.entities.Usuario;
-import com.pucpr.projeto.repositories.CampanhaRepository;
-import com.pucpr.projeto.repositories.PostagemRepository;
-import com.pucpr.projeto.repositories.UsuarioRepository;
-import com.pucpr.projeto.services.CampanhaService;
-import com.pucpr.projeto.services.PostagemService;
-import com.pucpr.projeto.services.UsuarioService;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import com.pucpr.projeto.domain.entities.DocOsc;
 import com.pucpr.projeto.domain.entities.Osc;
 import com.pucpr.projeto.domain.entities.Usuario;
@@ -22,9 +10,13 @@ import com.pucpr.projeto.domain.valueObjects.Telefone;
 import com.pucpr.projeto.enums.Categoria;
 import com.pucpr.projeto.enums.TipoDoc;
 import com.pucpr.projeto.exceptions.DomainException;
+import com.pucpr.projeto.repositories.CampanhaRepository;
 import com.pucpr.projeto.repositories.OscRepository;
+import com.pucpr.projeto.repositories.PostagemRepository;
 import com.pucpr.projeto.repositories.UsuarioRepository;
+import com.pucpr.projeto.services.CampanhaService;
 import com.pucpr.projeto.services.PessoaJuridicaService;
+import com.pucpr.projeto.services.PostagemService;
 import com.pucpr.projeto.services.UsuarioService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
@@ -74,66 +66,55 @@ public class HomeOscView {
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(15));
 
+        // 1. Cabeçalho
         HBox cabecalho = new HBox(20);
         cabecalho.setAlignment(Pos.CENTER_LEFT);
         Label lblBoasVindas = new Label("Painel da Instituição: " + perfilOsc.getNomeComercial());
         lblBoasVindas.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-
-        Button btnGerenciarCampanhas = new Button("Gerenciar Campanhas");
-        btnGerenciarCampanhas.setOnAction(e -> abrirTelaCampanhas());
-
-        Button btnMuralComunidade = new Button("Mural da Comunidade");
-        btnMuralComunidade.setOnAction(e -> abrirTelaPostagens());
-
-        HBox botoesNavegacao = new HBox(10, btnGerenciarCampanhas, btnMuralComunidade);
-
-
-        Label lblMinhasCampanhas = new Label("Nossas Campanhas Ativas:");
-
-
-        TableView<Campanha> tabelaCampanhas = new TableView<>();
-        tabelaCampanhas.setPlaceholder(new Label("Nenhuma campanha encontrada..."));
-
-        TableColumn<Campanha, String> colTitulo = new TableColumn<>("Título");
-        colTitulo.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTitulo()));
-        colTitulo.setPrefWidth(200);
-
-        TableColumn<Campanha, String> colMeta = new TableColumn<>("Meta");
-        colMeta.setCellValueFactory(data -> new SimpleStringProperty(
-                String.format("R$ %.2f", data.getValue().getMeta().getValor())
-        ));
-        colMeta.setPrefWidth(150);
-
-        TableColumn<Campanha, String> colStatus = new TableColumn<>("Status");
-        colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getStatus().name()));
-        colStatus.setPrefWidth(100);
-
-        tabelaCampanhas.getColumns().addAll(colTitulo, colMeta, colStatus);
-
-
-        CampanhaService campanhaService = new CampanhaService(new CampanhaRepository());
-        ObservableList<Campanha> campanhasObservable = FXCollections.observableArrayList(campanhaService.listarTodas());
-        tabelaCampanhas.setItems(campanhasObservable);
-
-
-        Label lblPrestacaoContas = new Label("Registro de Despesas (Transparência):");
-        TableView<?> tabelaDespesas = new TableView<>();
-        tabelaDespesas.setPlaceholder(new Label("Suas despesas aparecerão aqui..."));
-
         Button btnSair = new Button("Sair (Logout)");
         btnSair.setOnAction(e -> fazerLogout());
         cabecalho.getChildren().addAll(lblBoasVindas, btnSair);
 
+        // 2. Integração dos seus botões (Módulo 3 - Lucas)
+        Button btnGerenciarCampanhas = new Button("Gerenciar Campanhas");
+        btnGerenciarCampanhas.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnGerenciarCampanhas.setOnAction(e -> abrirTelaCampanhas());
+
+        Button btnMuralComunidade = new Button("Mural da Comunidade");
+        btnMuralComunidade.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnMuralComunidade.setOnAction(e -> abrirTelaPostagens());
+
+        HBox botoesNavegacao = new HBox(10, btnGerenciarCampanhas, btnMuralComunidade);
+        botoesNavegacao.setPadding(new Insets(5, 0, 5, 0));
+
+        // 3. Abas do Felipe (Módulo 2)
         TabPane painelAbas = new TabPane();
         painelAbas.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         painelAbas.getTabs().add(criarAbaPerfil());
         painelAbas.getTabs().add(criarAbaDocumentos());
 
-        layout.getChildren().addAll(cabecalho, new Separator(), painelAbas);
+        // Montando a tela final
+        layout.getChildren().addAll(cabecalho, botoesNavegacao, new Separator(), painelAbas);
         this.scene = new Scene(layout, 800, 650);
     }
+
+    // --- MÉTODOS DE NAVEGAÇÃO DO MÓDULO 3 (LUCAS) ---
+    private void abrirTelaCampanhas() {
+        CampanhaRepository repo = new CampanhaRepository();
+        CampanhaService service = new CampanhaService(repo);
+        CampanhaView view = new CampanhaView(service, stage, usuarioLogado, perfilOsc);
+        stage.setScene(view.getScene(stage));
+    }
+
+    private void abrirTelaPostagens() {
+        PostagemRepository repo = new PostagemRepository();
+        PostagemService service = new PostagemService(repo);
+        PostagemView view = new PostagemView(service, stage, usuarioLogado, perfilOsc);
+        stage.setScene(view.getScene(stage));
+    }
+    // ------------------------------------------------
 
     private Tab criarAbaPerfil() {
         Tab aba = new Tab("Meu Perfil Institucional");
@@ -292,7 +273,7 @@ public class HomeOscView {
                 btnAtualizarDoc.setDisable(false);
                 btnExcluirDoc.setDisable(false);
                 btnMockAprovar.setDisable(false);
-                btnAdicionar.setDisable(true); // Desabilita adicionar enquanto edita
+                btnAdicionar.setDisable(true);
             } else {
                 limparFormDoc();
                 btnAtualizarDoc.setDisable(true);
@@ -383,21 +364,7 @@ public class HomeOscView {
         DocOsc docSelecionado = tabelaDocs.getSelectionModel().getSelectedItem();
         if (docSelecionado != null) {
             try {
-                // Chama a service exigida pela regra de negócios para mock de validação backend
                 pjService.validarDocumentoMock(perfilOsc.getId(), docSelecionado.getId(), true);
-
-        layout.getChildren().addAll(
-                lblBoasVindas,
-                botoesNavegacao,
-                new Separator(),
-                lblMinhasCampanhas,
-                tabelaCampanhas,
-                lblPrestacaoContas,
-                tabelaDespesas,
-                btnSair
-        );
-        this.scene = new Scene(layout, 600, 650);
-                // Recarrega o objeto para obter o TrustScore novo e os status atualizados
                 perfilOsc = pjService.buscarPorId(perfilOsc.getId());
                 lblTrust.setText("TrustScore Atual: " + perfilOsc.getTrustScore());
                 atualizarTabelaDocs();
@@ -409,20 +376,6 @@ public class HomeOscView {
     }
 
     public Scene getScene() { return this.scene; }
-
-    private void abrirTelaCampanhas() {
-        CampanhaRepository repo = new CampanhaRepository();
-        CampanhaService service = new CampanhaService(repo);
-        CampanhaView view = new CampanhaView(service, stage, usuarioLogado, perfilOsc);
-        stage.setScene(view.getScene(stage));
-    }
-
-    private void abrirTelaPostagens() {
-        PostagemRepository repo = new PostagemRepository();
-        PostagemService service = new PostagemService(repo);
-        PostagemView view = new PostagemView(service, stage, usuarioLogado, perfilOsc);
-        stage.setScene(view.getScene(stage));
-    }
 
     private void fazerLogout() {
         LoginView loginView = new LoginView(stage, usuarioService);
